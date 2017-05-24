@@ -422,8 +422,8 @@ def generate_text_report_of_metadata (metadata):
             retval += '    Sequence length histograms:\n'
             for symbol_class,sequence_length_histogram in enumerate(analysis['sequence-length-histograms']):
                 retval += '        Symbol class {0} has average sequence length {1}.  Histogram:\n'.format(symbol_class, analysis['average-sequence-lengths'][symbol_class])
-                for sequence_length,count in sequence_length_histogram.iteritems():
-                    retval += '            Length {0}: {1} occurrences\n'.format(sequence_length, count)
+                for sequence_length in sorted(sequence_length_histogram.keys()):
+                    retval += '            Length {0}: {1} occurrences\n'.format(sequence_length, sequence_length_histogram[sequence_length])
 
             retval += '\n'
 
@@ -452,6 +452,18 @@ def epoch_count_for_key (key):
             return value
     return None
 
+def generate_alphabet (corpus):
+  return sorted(list(set(corpus)))
+
+def generate_alphabetical_symbol_index (alphabet):
+    alphabetical_symbol_index = [0 for _ in range(256)]
+    for i,symbol in enumerate(alphabet):
+        alphabetical_symbol_index[ord(symbol)] = i
+    for symbol in alphabet:
+        assert symbol == alphabet[alphabetical_symbol_index[ord(symbol)]]
+    assert all(0 <= symbol_index < len(alphabet) for symbol_index in alphabetical_symbol_index)
+    return alphabetical_symbol_index
+
 def load_training_data_and_alphabet (training_data_filename):
     # Read in the training data file and generate the alphabet of recognizable chars.
     with open(training_data_filename, 'r') as f:
@@ -461,13 +473,8 @@ def load_training_data_and_alphabet (training_data_filename):
         sys.stdout.write('    ...finished in {0} seconds.\n'.format(time.time() - start_time))
 
     # TODO: Figure out if alphabet [size] should be an explicit parameter of the RNN.
-    alphabet = sorted(list(set(training_data)))
-    alphabetical_symbol_index = [0 for _ in range(256)]
-    for i,symbol in enumerate(alphabet):
-        alphabetical_symbol_index[ord(symbol)] = i
-    for symbol in alphabet:
-        assert symbol == alphabet[alphabetical_symbol_index[ord(symbol)]]
-    assert all(0 <= symbol_index < len(alphabet) for symbol_index in alphabetical_symbol_index)
+    alphabet = generate_alphabet(training_data)
+    alphabetical_symbol_index = generate_alphabetical_symbol_index(alphabet)
     sys.stdout.write('Alphabet has {0} symbols and is "{1}".\n'.format(len(alphabet), alphabet))
     sys.stdout.write('Alphabetical symbol index: {0}.\n'.format(alphabetical_symbol_index))
 
